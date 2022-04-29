@@ -9,8 +9,8 @@ DWORD GetProcId(const wchar_t* procName) {
 
 	DWORD procId = 0;
 
-	/* CreateToolhelp32Snapshot - Takes snapshot of specified processes.
-	*  TH32CS_SNAPPROCESS - Include all processes in the system snapshot
+	/*	CreateToolhelp32Snapshot	- Takes snapshot of specified processes.
+	*	TH32CS_SNAPPROCESS			- Include all processes in the system snapshot
 	*/
 	HANDLE hSnap = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
 
@@ -27,8 +27,8 @@ DWORD GetProcId(const wchar_t* procName) {
 		if (Process32First(hSnap, &procEntry)) {
 			do {
 
-				/* _wcsicmp - Lexicographical wide string case-insensitive compare.
-				*  szExeFile - Name of executable file for the process.
+				/*	_wcsicmp	- Lexicographical wide string case-insensitive compare.
+				*	szExeFile	- Name of executable file for the process.
 				*/
 				if (!_wcsicmp(procEntry.szExeFile, procName)) {
 
@@ -47,6 +47,17 @@ DWORD GetProcId(const wchar_t* procName) {
 }
 
 int main() {
+	// My understanding:
+
+	/*	1. Get process ID.
+	*	2. Get handle to process.
+	*	3. Allocate space for path to hack DLL.
+	*	4. Write hack DLL path to memory.
+	*	5. Create thread in process that calls LoadLibraryA.
+	*	6. LoadLibraryA loads DLL into memory.
+	*	7. The system calls DLL's DllMain function.
+	*	8. Profit.
+	*/
 
 	const char* dllPath = "C:\\Users\\uttervitriol\\source\\repos\\AC_Internal_Hack_1_Follow_Along\\Debug\\AC_Internal_Hack_1.dll";
 	const wchar_t* procName = L"ac_client.exe";
@@ -57,21 +68,35 @@ int main() {
 		Sleep(30);
 	}
 
+	// OpenProcess - Get handle to open process.
 	HANDLE hProc = OpenProcess(PROCESS_ALL_ACCESS, 0, procId);
 
 	if (hProc && (hProc != INVALID_HANDLE_VALUE)) {
 
+		/*	VirtualAllocEx	- Reserves, commits or changes the state of a region of memory within address space of specified process.
+		*	MEM_COMMIT		- Allocates memory charges? Physical pages are not actually allocated until the addresses are accessed. 
+		*	MEM_RESERVE		- Reserves a range pof process's virtual address space without allocating any physical storage. 
+		*
+		*	PAGE_READWRITE	- Enables execution, read-only or read/write access to the committed region of pages.
+		*/
 		void* loc = VirtualAllocEx(hProc, 0, MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 
 		WriteProcessMemory(hProc, loc, dllPath, strlen(dllPath) + 1, 0);
 
+		/*	CreateRemoteThread	- Creates thread that runs in the virtual address space of another process
+		*	LoadLibraryA		- Loads the specified module into the address space of the calling process. 
+		* 
+		*	loc					- Address of memory where DLL path resides.
+		*/
 		HANDLE hThread = CreateRemoteThread(hProc, 0, 0, (LPTHREAD_START_ROUTINE)LoadLibraryA, loc, 0, 0);
 
+		// Close handle to thread if success.
 		if (hThread) {
 			CloseHandle(hThread);
 		}
 	}
 
+	// Close handle to process if success.
 	if (hProc) {
 		CloseHandle(hProc);
 	}
