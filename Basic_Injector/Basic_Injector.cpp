@@ -59,8 +59,8 @@ int main() {
 	*	8. Profit.
 	*/
 
-	const char* dllPath = "C:\\Users\\uttervitriol\\source\\repos\\AC_Internal_Hack_1_Follow_Along\\Debug\\AC_Internal_Hack_1.dll";
-	const wchar_t* procName = L"ac_client.exe";
+	const char* dllPath = "C:\\Users\\uttervitriol\\source\\repos\\vagante\\vagante\\Release\\vagante.dll";
+	const wchar_t* procName = L"vagante.exe";
 	DWORD procId = 0;
 
 	while (!procId) {
@@ -80,8 +80,8 @@ int main() {
 		*	PAGE_READWRITE	- Enables execution, read-only or read/write access to the committed region of pages.
 		*/
 		void* loc = VirtualAllocEx(hProc, 0, MAX_PATH, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-
-		WriteProcessMemory(hProc, loc, dllPath, strlen(dllPath) + 1, 0);
+		SIZE_T bWritten = 0;
+		WriteProcessMemory(hProc, loc, dllPath, strlen(dllPath) + 1, &bWritten);
 
 		/*	CreateRemoteThread	- Creates thread that runs in the virtual address space of another process
 		*	LoadLibraryA		- Loads the specified module into the address space of the calling process. 
